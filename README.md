@@ -1,96 +1,345 @@
+## Laravel Plans
+Laravel Plans is a package for SaaS apps that need management over plans, features, subscriptions, events for plans or limited, countable features.
 
-[<img src="https://github-ads.s3.eu-central-1.amazonaws.com/support-ukraine.svg?t=1" />](https://supportukrainenow.org)
-
-# :package_description
-
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/:vendor_slug/:package_slug.svg?style=flat-square)](https://packagist.org/packages/:vendor_slug/:package_slug)
-[![GitHub Tests Action Status](https://img.shields.io/github/workflow/status/:vendor_slug/:package_slug/run-tests?label=tests)](https://github.com/:vendor_slug/:package_slug/actions?query=workflow%3Arun-tests+branch%3Amain)
-[![GitHub Code Style Action Status](https://img.shields.io/github/workflow/status/:vendor_slug/:package_slug/Fix%20PHP%20code%20style%20issues?label=code%20style)](https://github.com/:vendor_slug/:package_slug/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
-[![Total Downloads](https://img.shields.io/packagist/dt/:vendor_slug/:package_slug.svg?style=flat-square)](https://packagist.org/packages/:vendor_slug/:package_slug)
-<!--delete-->
+### Laravel Cashier
 ---
-This repo can be used to scaffold a Laravel package. Follow these steps to get started:
+While Laravel Cashier does this job really well, there are some features that can be useful for SaaS apps:
+* **Countable, limited features** - If you plan to limit the amount of resources a subscriber can have and track the usage, this package does that for you.
+* **Recurrency built-in, customizable recurrency period** - While Stripe or limits you to subscribe your users daily, weekly, monthy or yearly, this package lets you define your own amount of days for any subscription or plan.
+* **Event-driven by nature** - you can listen for events. What if you can give 3 free days to the next subscription if your users pay their invoice in time?
 
-1. Press the "Use this template" button at the top of this repo to create a new repo with the contents of this skeleton.
-2. Run "php ./configure.php" to run a script that will replace all placeholders throughout all the files.
-3. Have fun creating your package.
-4. If you need help creating a package, consider picking up our <a href="https://laravelpackage.training">Laravel Package Training</a> video course.
+### Installation
 ---
-<!--/delete-->
-This is where your description should go. Limit it to a paragraph or two. Consider adding a small example.
 
-## Support us
-
-[<img src="https://github-ads.s3.eu-central-1.amazonaws.com/:package_name.jpg?t=1" width="419px" />](https://spatie.be/github-ad-click/:package_name)
-
-We invest a lot of resources into creating [best in class open source packages](https://spatie.be/open-source). You can support us by [buying one of our paid products](https://spatie.be/open-source/support-us).
-
-We highly appreciate you sending us a postcard from your hometown, mentioning which of our package(s) you are using. You'll find our address on [our contact page](https://spatie.be/about-us). We publish all received postcards on [our virtual postcard wall](https://spatie.be/open-source/postcards).
-
-## Installation
-
-You can install the package via composer:
-
+Install the package:
 ```bash
-composer require :vendor_slug/:package_slug
+$ composer require abr4xas/laravel-plans
 ```
 
-You can publish and run the migrations with:
-
-```bash
-php artisan vendor:publish --tag=":package_slug-migrations"
-php artisan migrate
+If your Laravel version does not support package discovery, add this line in the `providers` array in your `config/app.php` file:
+```php
+Abr4xas\Plans\PlansServiceProvider::class,
 ```
 
-You can publish the config file with:
-
+Publish the config file & migration files:
 ```bash
-php artisan vendor:publish --tag=":package_slug-config"
+$ php artisan vendor:publish --provider=Abr4xas\Plans\PlansServiceProvider
 ```
 
-This is the contents of the published config file:
+Migrate the database:
+```bash
+$ php artisan migrate
+```
+
+Add the `HasPlans` trait to your Eloquent model:
+```php
+use Abr4xas\Plans\Traits\HasPlans;
+
+class User extends Model {
+    use HasPlans;
+    ...
+}
+```
+
+## Creating plans
+---
+
+The basic unit of the subscription-like system is a plan. You can create it using `Abr4xas\Plans\Models\Plan` or your model, if you have implemented your own.
 
 ```php
-return [
+$plan = Plan::create([
+    'name' => 'Enterprise',
+    'description' => 'The biggest plans of all.',
+    'price' => 20.99,
+    'currency' => 'EUR',
+    'duration' => 30, // in days
+    'metadata' => ['key1' => 'value1', ...],
+]);
+```
+
+### Features
+---
+
+Each plan has features. They can be either countable, and those are limited or unlimited, or there just to store the information, such a specific permission.
+
+Marking a feature type can be done using:
+* `feature`, is a single string, that do not needs counting. For example, you can store permissions.
+* `limit`, is a number. For this kind of feature, the `limit` attribute will be filled. It is meant to measure how many of that feature the user has consumed, from this subscription. For example, you can count how many build minutes this user has consumed during the month (or during the Cycle, which is 30 days in this example)
+
+**Note: For unlimited feature, the `limit` field will be set to any negative value.**
+
+To attach features to your plan, you can use the relationship `features()` and pass as many `Abr4xas\Plans\Models\Feature`instances as you need:
+```php
+$plan->features()->saveMany([
+    new Feature([
+        'name' => 'Vault access',
+        'code' => 'vault.access',
+        'description' => 'Offering access to the vault.',
+        'type' => 'feature',
+    ]),
+    new Feature([
+        'name' => 'Build minutes',
+        'code' => 'build.minutes',
+        'description' => 'Build minutes used for CI/CD.',
+        'type' => 'limit',
+        'limit' => 2000,
+    ]),
+    new Feature([
+        'name' => 'Users amount',
+        'code' => 'users.amount',
+        'description' => 'The maximum amount of users that can use the app at the same time.',
+        'type' => 'limit',
+        'limit' => -1, // or any negative value
+    ]),
+    ...
+]);
+```
+
+Later, you can retrieve the permissions directly from the subscription:
+```php
+$subscription->features()->get(); // All features
+$subscription->features()->code($codeId)->first(); // Feature with a specific code.
+$subscription->features()->limited()->get(); // Only countable/unlimited features.
+$subscription->features()->feature()->get(); // Uncountable, permission-like features.
+```
+
+### Subscribing to plans
+---
+
+Your users can be subscribed to plans for a certain amount of days or until a certain date.
+```php
+$subscription = $user->subscribeTo($plan, 30); // 30 days
+$subscription->remainingDays(); // 29 (29 days, 23 hours, ...)
+```
+
+By default, the plan is marked as `recurring`, so it's eligible to be extended after it expires, if you plan to do so like it's explained in the **Recurrency** section below.
+
+If you don't want a recurrent subscription, you can pass `false` as a third argument:
+```php
+$subscription = $user->subscribeTo($plan, 30, false); // 30 days, non-recurrent
+```
+
+If you plan to subscribe your users until a certain date, you can pass strngs containing a date, a datetime or a Carbon instance.
+
+If your subscription is recurrent, the amount of days for a recurrency cycle is the difference between the expiring date and the current date.
+```php
+$user->subscribeToUntil($plan, '2018-12-21');
+$user->subscribeToUntil($plan, '2018-12-21 16:54:11');
+$user->subscribeToUntil($plan, Carbon::create(2018, 12, 21, 16, 54, 11));
+
+$user->subscribeToUntil($plan, '2018-12-21', false); // no recurrency
+```
+
+**Note: If the user is already subscribed, the `subscribeTo()` will return false. To avoid this, upgrade or extend the subscription.**
+
+### Upgrading subscription
+---
+
+Upgrading the current subscription's plan can be done in two ways: it either extends the current subscription with the amount of days passed or creates another one, in extension to this current one.
+
+Either way, you have to pass a boolean as the third parameter. By default, it extends the current subscription.
+```php
+// The current subscription got longer with 60 days.
+$currentSubscription = $user->upgradeCurrentPlanTo($anotherPlan, 60, true);
+
+// A new subscription, with 60 days valability, starting when the current one ends.
+$newSubscription = $user->upgradeCurrentPlanTo($anotherPlan, 60, false);
+```
+
+Just like the subscribe methods, upgrading also support dates as a third parameter if you plan to create a new subscription at the end of the current one.
+```php
+$user->upgradeCurrentPlanToUntil($anotherPlan, '2018-12-21', false);
+$user->upgradeCurrentPlanToUntil($anotherPlan, '2018-12-21 16:54:11', false);
+$user->upgradeCurrentPlanToUntil($anotherPlan, Carbon::create(2018, 12, 21, 16, 54, 11), false);
+```
+
+Passing a fourth parameter is available, if your third parameter is `false`, and you should pass it if you'd like to mark the new subscription as recurring.
+```php
+// Creates a new subscription that starts at the end of the current one, for 30 days and recurrent.
+$newSubscription = $user->upgradeCurrentPlanTo($anotherPlan, 30, false, true);
+```
+
+### Extending current subscription
+---
+
+Upgrading uses the extension methods, so it uses the same arguments, but you do not pass as the first argument a Plan model:
+```php
+// The current subscription got extended with 60 days.
+$currentSubscription = $user->extendCurrentSubscriptionWith(60, true);
+
+// A new subscription, which starts at the end of the current one.
+$newSubscrioption = $user->extendCurrentSubscriptionWith(60, false);
+
+// A new subscription, which starts at the end of the current one and is recurring.
+$newSubscrioption = $user->extendCurrentSubscriptionWith(60, false, true);
+```
+
+Extending also works with dates:
+```php
+$user->extendCurrentSubscriptionUntil('2018-12-21');
+```
+
+### Cancelling subscriptions
+---
+
+You can cancel subscriptions. If a subscription is not finished yet (it is not expired), it will be marked as `pending cancellation`. It will be fully cancelled when the expiration dates passes the current time and is still cancelled.
+```php
+// Returns false if there is not an active subscription.
+$user->cancelCurrentSubscription();
+$lastActiveSubscription = $user->lastActiveSubscription();
+
+$lastActiveSubscription->isCancelled(); // true
+$lastActiveSubscription->isPendingCancellation(); // true
+$lastActiveSubscription->isActive(); // false
+
+$lastActiveSubscription->hasStarted();
+$lastActiveSubscription->hasExpired();
+```
+
+### Consuming countable features
+---
+
+To consume the `limit` type feature, you have to call the `consumeFeature()` method within a subscription instance.
+
+To retrieve a subscription instance, you can call `activeSubscription()` method within the user that implements the trait. As a pre-check, don't forget to call `hasActiveSubscription()` from the user instance to make sure it is subscribed to it.
+
+```php
+if ($user->hasActiveSubscription()) {
+    $subscription = $user->activeSubscription();
+    $subscription->consumeFeature('build.minutes', 10);
+
+    $subscription->getUsageOf('build.minutes'); // 10
+    $subscription->getRemainingOf('build.minutes'); // 1990
+}
+```
+
+The `consumeFeature()` method will return:
+* `false` if the feature does not exist, the feature is not a `limit` or the amount is exceeding the current feature allowance
+* `true` if the consumption was done successfully
+
+```php
+// Note: The remaining of build.minutes is now 1990
+
+$subscription->consumeFeature('build.minutes', 1991); // false
+$subscription->consumeFeature('build.hours', 1); // false
+$subscription->consumeFeature('build.minutes', 30); // true
+
+$subscription->getUsageOf('build.minutes'); // 40
+$subscription->getRemainingOf('build.minutes'); // 1960
+```
+
+If `consumeFeature()` meets an unlimited feature, it will consume it and it will also track usage just like a normal record in the database, but will never return false. The remaining will always be `-1` for unlimited features.
+
+The revering method for `consumeFeature()` method is `unconsumeFeature()`. This works just the same, but in the reverse:
+```php
+// Note: The remaining of build.minutes is 1960
+
+$subscription->consumeFeature('build.minutes', 60); // true
+
+$subscription->getUsageOf('build.minutes'); // 100
+$subscription->getRemainingOf('build.minutes'); // 1900
+
+$subscription->unconsumeFeature('build.minutes', 100); // true
+$subscription->unconsumeFeature('build.hours', 1); // false
+
+$subscription->getUsageOf('build.minutes'); // 0
+$subscription->getRemainingOf('build.minutes'); // 2000
+```
+
+Using the `unconsumeFeature()` method on unlimited features will also reduce usage, but it will never reach negative values.
+
+### Events
+---
+
+When using subscription plans, you want to listen for events to automatically run code that might do changes for your app.
+
+Events are easy to use. If you are not familiar, you can check [Laravel's Official Documentation on Events](https://laravel.com/docs/9.x/events).
+
+All you have to do is to implement the following Events in your `EventServiceProvider.php` file. Each event will have it's own members than can be accessed through the `$event` variable within the `handle()` method in your listener.
+
+```php
+$listen = [
+    ...
+    \Abr4xas\Plans\Events\CancelSubscription::class => [
+        // $event->model = The model that cancelled the subscription.
+        // $event->subscription = The subscription that was cancelled.
+    ],
+    \Abr4xas\Plans\Events\NewSubscription::class => [
+        // $event->model = The model that was subscribed.
+        // $event->subscription = The subscription that was created.
+    ],
+     \Abr4xas\Plans\Events\NewSubscriptionUntil::class => [
+        // $event->model = The model that was subscribed.
+        // $event->subscription = The subscription that was created.
+    ],
+    \Abr4xas\Plans\Events\ExtendSubscription::class => [
+        // $event->model = The model that extended the subscription.
+        // $event->subscription = The subscription that was extended.
+        // $event->startFromNow = If the subscription is exteded now or is created a new subscription, in the future.
+        // $event->newSubscription = If the startFromNow is false, here will be sent the new subscription that starts after the current one ends.
+    ],
+    \Abr4xas\Plans\Events\ExtendSubscriptionUntil::class => [
+        // $event->model = The model that extended the subscription.
+        // $event->subscription = The subscription that was extended.
+        // $event->expiresOn = The Carbon instance of the date when the subscription will expire.
+        // $event->startFromNow = If the subscription is exteded now or is created a new subscription, in the future.
+        // $event->newSubscription = If the startFromNow is false, here will be sent the new subscription that starts after the current one ends.
+    ],
+    \Abr4xas\Plans\Events\UpgradeSubscription::class => [
+        // $event->model = The model that upgraded the subscription.
+        // $event->subscription = The current subscription.
+        // $event->startFromNow = If the subscription is upgraded now or is created a new subscription, in the future.
+        // $event->oldPlan = Here lies the current (which is now old) plan.
+        // $event->newPlan = Here lies the new plan. If it's the same plan, it will match with the $event->oldPlan
+    ],
+    \Abr4xas\Plans\Events\UpgradeSubscriptionUntil::class => [
+        // $event->model = The model that upgraded the subscription.
+        // $event->subscription = The current subscription.
+        // $event->expiresOn = The Carbon instance of the date when the subscription will expire.
+        // $event->startFromNow = If the subscription is upgraded now or is created a new subscription, in the future.
+        // $event->oldPlan = Here lies the current (which is now old) plan.
+        // $event->newPlan = Here lies the new plan. If it's the same plan, it will match with the $event->oldPlan
+    ],
+    \Abr4xas\Plans\Events\FeatureConsumed::class => [
+        // $event->subscription = The current subscription.
+        // $event->feature = The feature that was used.
+        // $event->used = The amount used.
+        // $event->remaining = The total amount remaining. If the feature is unlimited, will return -1
+    ],
+     \Abr4xas\Plans\Events\FeatureUnconsumed::class => [
+        // $event->subscription = The current subscription.
+        // $event->feature = The feature that was used.
+        // $event->used = The amount reverted.
+        // $event->remaining = The total amount remaining. If the feature is unlimited, will return -1
+    ],
 ];
 ```
 
-Optionally, you can publish the views using
-
-```bash
-php artisan vendor:publish --tag=":package_slug-views"
-```
-
-## Usage
-
-```php
-$variable = new VendorName\Skeleton();
-echo $variable->echoPhrase('Hello, VendorName!');
-```
-
-## Testing
+### Testing
 
 ```bash
 composer test
 ```
 
-## Changelog
+### Changelog
 
 Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed recently.
 
-## Contributing
+### Contributing
 
 Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
 
-## Security Vulnerabilities
+### Security Vulnerabilities
 
 Please review [our security policy](../../security/policy) on how to report security vulnerabilities.
 
-## Credits
+### Credits
 
-- [:author_name](https://github.com/:author_username)
+- [Angel](https://github.com/abr4xas)
+- **Georgescu Alexandru** *Initial work*
+- [Musa Kurt](https://github.com/whtht)
 - [All Contributors](../../contributors)
 
-## License
+### License
 
 The MIT License (MIT). Please see [License File](LICENSE.md) for more information.

@@ -1,10 +1,10 @@
 <?php
 
-namespace VendorName\Skeleton\Tests;
+namespace Abr4xas\LaravelPlans\Tests;
 
+use Abr4xas\LaravelPlans\LaravelPlansServiceProvider;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Orchestra\Testbench\TestCase as Orchestra;
-use VendorName\Skeleton\SkeletonServiceProvider;
 
 class TestCase extends Orchestra
 {
@@ -13,14 +13,14 @@ class TestCase extends Orchestra
         parent::setUp();
 
         Factory::guessFactoryNamesUsing(
-            fn (string $modelName) => 'VendorName\\Skeleton\\Database\\Factories\\'.class_basename($modelName).'Factory'
+            fn (string $modelName) => 'Abr4xas\\LaravelPlans\\Database\\Factories\\'.class_basename($modelName).'Factory'
         );
     }
 
     protected function getPackageProviders($app)
     {
         return [
-            SkeletonServiceProvider::class,
+            LaravelPlansServiceProvider::class,
         ];
     }
 
@@ -28,9 +28,16 @@ class TestCase extends Orchestra
     {
         config()->set('database.default', 'testing');
 
-        /*
-        $migration = include __DIR__.'/../database/migrations/create_skeleton_table.php.stub';
-        $migration->up();
-        */
+        $create_users_table = include __DIR__.'/database/migrations/create_users_table.php.stub';
+        $createPlans = include __DIR__.'/../database/migrations/create_plans_table.php.stub';
+        $createFeatures = include __DIR__.'/../database/migrations/create_features_table.php.stub';
+        $createSubscriptions = include __DIR__.'/../database/migrations/create_subscriptions_table.php.stub';
+        $createPlanSubscriptionUsages = include __DIR__.'/../database/migrations/create_plan_subscription_usages_table.php.stub';
+
+        $create_users_table->up();
+        $createPlans->up();
+        $createFeatures->up();
+        $createSubscriptions->up();
+        $createPlanSubscriptionUsages->up();
     }
 }
