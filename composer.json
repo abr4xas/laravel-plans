@@ -1,6 +1,6 @@
 {
     "name": "abr4xas/laravel-plans",
-    "description": ":D",
+    "description": "Laravel Plans is a package for SaaS apps that need management over plans, features, subscriptions, events for plans or limited, countable features.",
     "keywords": [
         "abr4xas",
         "laravel",
