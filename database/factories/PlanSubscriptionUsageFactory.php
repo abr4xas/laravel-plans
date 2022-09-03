@@ -10,7 +10,6 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class PlanSubscriptionUsageFactory extends Factory
 {
-
     protected $model = PlanSubscriptionUsage::class;
 
     /**

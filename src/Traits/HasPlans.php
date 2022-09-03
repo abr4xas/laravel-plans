@@ -272,8 +272,8 @@ trait HasPlans
     /**
      * Upgrade the binded model's plan. If it is the same plan, it just extends it.
      *
-     * @param Plan $newPlan The new Plan model instance.
-     * @param DateTime|string $date The date (either DateTime, date or Carbon instance) until the subscription will be extended until.
+     * @param  Plan  $newPlan The new Plan model instance.
+     * @param  DateTime|string  $date The date (either DateTime, date or Carbon instance) until the subscription will be extended until.
      * @param  bool  $startFromNow whether the subscription will start from now, extending the current plan, or a new subscription will be created to extend the current one.
      * @param  bool  $isRecurring whether the subscription should auto-renew. The renewal period (in days) is the difference between now and the set date.
      * @return false|Model|Subscription The PlanSubscription model instance with the new plan or the current one, extended.
