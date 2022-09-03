@@ -13,15 +13,15 @@ class ExtendSubscriptionUntil
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $model;
+    public Model $model;
 
-    public $subscription;
+    public Subscription $subscription;
 
-    public $expiresOn;
+    public Carbon $expiresOn;
 
-    public $startFromNow;
+    public bool $startFromNow;
 
-    public $newSubscription;
+    public ?Subscription $newSubscription;
 
     /**
      * @param  Model  $model The model on which the action was done.

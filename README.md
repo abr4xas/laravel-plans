@@ -2,13 +2,15 @@
 Laravel Plans is a package for SaaS apps that need management over plans, features, subscriptions, events for plans or limited, countable features.
 
 ### Laravel Cashier
+
 ---
 While Laravel Cashier does this job really well, there are some features that can be useful for SaaS apps:
+
 * **Countable, limited features** - If you plan to limit the amount of resources a subscriber can have and track the usage, this package does that for you.
-* **Recurrency built-in, customizable recurrency period** - While Stripe or limits you to subscribe your users daily, weekly, monthy or yearly, this package lets you define your own amount of days for any subscription or plan.
 * **Event-driven by nature** - you can listen for events. What if you can give 3 free days to the next subscription if your users pay their invoice in time?
 
 ### Installation
+
 ---
 
 Install the package:
@@ -41,7 +43,8 @@ class User extends Model {
 }
 ```
 
-## Creating plans
+### Creating plans
+
 ---
 
 The basic unit of the subscription-like system is a plan. You can create it using `Abr4xas\Plans\Models\Plan` or your model, if you have implemented your own.
@@ -50,14 +53,12 @@ The basic unit of the subscription-like system is a plan. You can create it usin
 $plan = Plan::create([
     'name' => 'Enterprise',
     'description' => 'The biggest plans of all.',
-    'price' => 20.99,
-    'currency' => 'EUR',
     'duration' => 30, // in days
-    'metadata' => ['key1' => 'value1', ...],
 ]);
 ```
 
 ### Features
+
 ---
 
 Each plan has features. They can be either countable, and those are limited or unlimited, or there just to store the information, such a specific permission.
@@ -69,6 +70,7 @@ Marking a feature type can be done using:
 **Note: For unlimited feature, the `limit` field will be set to any negative value.**
 
 To attach features to your plan, you can use the relationship `features()` and pass as many `Abr4xas\Plans\Models\Feature`instances as you need:
+
 ```php
 $plan->features()->saveMany([
     new Feature([
@@ -104,9 +106,11 @@ $subscription->features()->feature()->get(); // Uncountable, permission-like fea
 ```
 
 ### Subscribing to plans
+
 ---
 
 Your users can be subscribed to plans for a certain amount of days or until a certain date.
+
 ```php
 $subscription = $user->subscribeTo($plan, 30); // 30 days
 $subscription->remainingDays(); // 29 (29 days, 23 hours, ...)
@@ -115,6 +119,7 @@ $subscription->remainingDays(); // 29 (29 days, 23 hours, ...)
 By default, the plan is marked as `recurring`, so it's eligible to be extended after it expires, if you plan to do so like it's explained in the **Recurrency** section below.
 
 If you don't want a recurrent subscription, you can pass `false` as a third argument:
+
 ```php
 $subscription = $user->subscribeTo($plan, 30, false); // 30 days, non-recurrent
 ```
@@ -122,22 +127,24 @@ $subscription = $user->subscribeTo($plan, 30, false); // 30 days, non-recurrent
 If you plan to subscribe your users until a certain date, you can pass strngs containing a date, a datetime or a Carbon instance.
 
 If your subscription is recurrent, the amount of days for a recurrency cycle is the difference between the expiring date and the current date.
+
 ```php
 $user->subscribeToUntil($plan, '2018-12-21');
 $user->subscribeToUntil($plan, '2018-12-21 16:54:11');
 $user->subscribeToUntil($plan, Carbon::create(2018, 12, 21, 16, 54, 11));
-
 $user->subscribeToUntil($plan, '2018-12-21', false); // no recurrency
 ```
 
 **Note: If the user is already subscribed, the `subscribeTo()` will return false. To avoid this, upgrade or extend the subscription.**
 
 ### Upgrading subscription
+
 ---
 
 Upgrading the current subscription's plan can be done in two ways: it either extends the current subscription with the amount of days passed or creates another one, in extension to this current one.
 
 Either way, you have to pass a boolean as the third parameter. By default, it extends the current subscription.
+
 ```php
 // The current subscription got longer with 60 days.
 $currentSubscription = $user->upgradeCurrentPlanTo($anotherPlan, 60, true);
@@ -147,6 +154,7 @@ $newSubscription = $user->upgradeCurrentPlanTo($anotherPlan, 60, false);
 ```
 
 Just like the subscribe methods, upgrading also support dates as a third parameter if you plan to create a new subscription at the end of the current one.
+
 ```php
 $user->upgradeCurrentPlanToUntil($anotherPlan, '2018-12-21', false);
 $user->upgradeCurrentPlanToUntil($anotherPlan, '2018-12-21 16:54:11', false);
@@ -154,32 +162,37 @@ $user->upgradeCurrentPlanToUntil($anotherPlan, Carbon::create(2018, 12, 21, 16, 
 ```
 
 Passing a fourth parameter is available, if your third parameter is `false`, and you should pass it if you'd like to mark the new subscription as recurring.
+
 ```php
 // Creates a new subscription that starts at the end of the current one, for 30 days and recurrent.
 $newSubscription = $user->upgradeCurrentPlanTo($anotherPlan, 30, false, true);
 ```
 
 ### Extending current subscription
+
 ---
 
 Upgrading uses the extension methods, so it uses the same arguments, but you do not pass as the first argument a Plan model:
+
 ```php
 // The current subscription got extended with 60 days.
 $currentSubscription = $user->extendCurrentSubscriptionWith(60, true);
 
 // A new subscription, which starts at the end of the current one.
-$newSubscrioption = $user->extendCurrentSubscriptionWith(60, false);
+$newSubscription = $user->extendCurrentSubscriptionWith(60, false);
 
 // A new subscription, which starts at the end of the current one and is recurring.
-$newSubscrioption = $user->extendCurrentSubscriptionWith(60, false, true);
+$newSubscription = $user->extendCurrentSubscriptionWith(60, false, true);
 ```
 
 Extending also works with dates:
+
 ```php
 $user->extendCurrentSubscriptionUntil('2018-12-21');
 ```
 
 ### Cancelling subscriptions
+
 ---
 
 You can cancel subscriptions. If a subscription is not finished yet (it is not expired), it will be marked as `pending cancellation`. It will be fully cancelled when the expiration dates passes the current time and is still cancelled.
@@ -197,6 +210,7 @@ $lastActiveSubscription->hasExpired();
 ```
 
 ### Consuming countable features
+
 ---
 
 To consume the `limit` type feature, you have to call the `consumeFeature()` method within a subscription instance.
@@ -231,6 +245,7 @@ $subscription->getRemainingOf('build.minutes'); // 1960
 If `consumeFeature()` meets an unlimited feature, it will consume it and it will also track usage just like a normal record in the database, but will never return false. The remaining will always be `-1` for unlimited features.
 
 The revering method for `consumeFeature()` method is `unconsumeFeature()`. This works just the same, but in the reverse:
+
 ```php
 // Note: The remaining of build.minutes is 1960
 
@@ -249,6 +264,7 @@ $subscription->getRemainingOf('build.minutes'); // 2000
 Using the `unconsumeFeature()` method on unlimited features will also reduce usage, but it will never reach negative values.
 
 ### Events
+
 ---
 
 When using subscription plans, you want to listen for events to automatically run code that might do changes for your app.

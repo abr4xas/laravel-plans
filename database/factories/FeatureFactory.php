@@ -2,19 +2,22 @@
 
 namespace Abr4xas\LaravelPlans\Database\Factories;
 
+use Abr4xas\LaravelPlans\Models\Feature;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Feature>
+ * @extends Factory
  */
 class FeatureFactory extends Factory
 {
+    protected $model = Feature::class;
+
     /**
      * Define the model's default state.
      *
      * @return array<string, mixed>
      */
-    public function definition()
+    public function definition(): array
     {
         return [
             //

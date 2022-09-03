@@ -23,7 +23,7 @@ class ExtendSubscription
     /**
      * @param  Model  $model The model on which the action was done.
      * @param  Subscription  $subscription Subscription that was extended.
-     * @param  bool  $startFromNow Wether the current subscription is extended or is created at the next cycle.
+     * @param  bool  $startFromNow whether the current subscription is extended or is created at the next cycle.
      * @param  null|Subscription  $newSubscription Null if $startFromNow is true; The new subscription created in extension.
      * @return void
      */

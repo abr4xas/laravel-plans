@@ -30,7 +30,6 @@ test('it cant subscribe to a plan with invalid date', function () {
 
 test('it can subscribe', function () {
     $subscription = $this->user->subscribeTo($this->plan, 15);
-    sleep(1);
 
     $this->assertEquals($subscription->plan_id, $this->plan->id);
     $this->assertNotNull($this->user->subscriptions()->first());
@@ -45,8 +44,6 @@ test('it can subscribe', function () {
 
 test('it can subscribe until with a carbon instance', function () {
     $subscription = $this->user->subscribeToUntil($this->plan, Carbon::now()->addDays(15));
-    sleep(1);
-
     $this->assertEquals($subscription->plan_id, $this->plan->id);
     $this->assertNotNull($this->user->subscriptions()->first());
     $this->assertEquals($this->user->subscriptions()->expired()->count(), 0);
@@ -60,7 +57,6 @@ test('it can subscribe until with a carbon instance', function () {
 
 test('it can subscribe until with date time string', function () {
     $subscription = $this->user->subscribeToUntil($this->plan, Carbon::now()->addDays(15)->toDateTimeString());
-    sleep(1);
 
     $this->assertEquals($subscription->plan_id, $this->plan->id);
     $this->assertNotNull($this->user->subscriptions()->first());
@@ -72,7 +68,6 @@ test('it can subscribe until with date time string', function () {
 
 test('it can subscribe to until with a date string', function () {
     $subscription = $this->user->subscribeToUntil($this->plan, Carbon::now()->addDays(15)->toDateString());
-    sleep(1);
 
     $this->assertEquals($subscription->plan_id, $this->plan->id);
     $this->assertNotNull($this->user->subscriptions()->first());
@@ -83,107 +78,70 @@ test('it can subscribe to until with a date string', function () {
 });
 
 test('it can upgrade with wrong duration', function () {
-    $subscription = $this->user->subscribeTo($this->plan, 15);
-    sleep(1);
-
+    $this->user->subscribeTo($this->plan, 15);
     $this->assertFalse($this->user->upgradeCurrentPlanTo($this->newPlan, 0));
     $this->assertFalse($this->user->upgradeCurrentPlanTo($this->newPlan, -1));
 });
 
 test('it can upgrade with invalid date', function () {
-    $subscription = $this->user->subscribeTo($this->plan, 15);
-    sleep(1);
-
+    $this->user->subscribeTo($this->plan, 15);
     $this->assertFalse($this->user->upgradeCurrentPlanToUntil($this->plan, Carbon::yesterday()));
     $this->assertFalse($this->user->upgradeCurrentPlanToUntil($this->plan, Carbon::yesterday()->toDateTimeString()));
     $this->assertFalse($this->user->upgradeCurrentPlanToUntil($this->plan, Carbon::yesterday()->toDateString()));
 });
 
 test('it can upgrade now', function () {
-    $subscription = $this->user->subscribeTo($this->plan, 15);
-    sleep(1);
-
+    $this->user->subscribeTo($this->plan, 15);
     $subscription = $this->user->upgradeCurrentPlanTo($this->newPlan, 30, true);
-
     $this->assertEquals($subscription->plan_id, $this->newPlan->id);
     $this->assertEquals($subscription->remainingDays(), 44);
 });
 
 test('it can upgrade to another cycle', function () {
     $subscription = $this->user->subscribeTo($this->plan, 15);
-    sleep(1);
-
     $this->user->upgradeCurrentPlanTo($this->newPlan, 30, false);
-
     $this->assertEquals($subscription->plan_id, $this->plan->id);
     $this->assertEquals($subscription->remainingDays(), 14);
     $this->assertEquals($this->user->subscriptions->count(), 2);
 });
 
 test('it can upgrade to now with carbon instance', function () {
-    $subscription = $this->user->subscribeTo($this->plan, 15);
-    sleep(1);
-
     $subscription = $this->user->upgradeCurrentPlanToUntil($this->newPlan, Carbon::now()->addDays(30), true);
-    sleep(1);
-
     $this->assertEquals($subscription->plan_id, $this->newPlan->id);
     $this->assertEquals($subscription->remainingDays(), 29);
 });
 
 test('it can upgrade to another cycle with carbon instance', function () {
     $subscription = $this->user->subscribeTo($this->plan, 15);
-    sleep(1);
-
     $this->user->upgradeCurrentPlanToUntil($this->newPlan, Carbon::now()->addDays(30), false);
-    sleep(1);
-
     $this->assertEquals($subscription->plan_id, $this->plan->id);
     $this->assertEquals($subscription->remainingDays(), 14);
     $this->assertEquals($this->user->subscriptions->count(), 2);
 });
 
 test('it can upgrade to now with date time string', function () {
-    $subscription = $this->user->subscribeTo($this->plan, 15);
-    sleep(1);
-
     $subscription = $this->user->upgradeCurrentPlanToUntil($this->newPlan, Carbon::now()->addDays(30)->toDateTimeString(), true);
-    sleep(1);
-
     $this->assertEquals($subscription->plan_id, $this->newPlan->id);
     $this->assertEquals($subscription->remainingDays(), 29);
 });
 
 test('it can upgrade to another cycle with date time string', function () {
     $subscription = $this->user->subscribeTo($this->plan, 15);
-    sleep(1);
-
     $this->user->upgradeCurrentPlanToUntil($this->newPlan, Carbon::now()->addDays(30)->toDateTimeString(), false);
-    sleep(1);
-
     $this->assertEquals($subscription->plan_id, $this->plan->id);
     $this->assertEquals($subscription->remainingDays(), 14);
     $this->assertEquals($this->user->subscriptions->count(), 2);
 });
 
 test('it can upgrade to now with date string', function () {
-    $subscription = $this->user->subscribeTo($this->plan, 15);
-    sleep(1);
-
     $subscription = $this->user->upgradeCurrentPlanToUntil($this->newPlan, Carbon::now()->addDays(30)->toDateString(), true);
-    sleep(1);
-
     $this->assertEquals($subscription->plan_id, $this->newPlan->id);
     $this->assertEquals($subscription->remainingDays(), 29);
 });
 
 test('it can upgrade to another cycle with date string', function () {
     $subscription = $this->user->subscribeTo($this->plan, 15);
-    sleep(1);
-
     $this->user->upgradeCurrentPlanToUntil($this->newPlan, Carbon::now()->addDays(30)->toDateString(), false);
-    sleep(1);
-
     $this->assertEquals($subscription->plan_id, $this->plan->id);
     $this->assertEquals($subscription->remainingDays(), 14);
     $this->assertEquals($this->user->subscriptions->count(), 2);
@@ -191,100 +149,66 @@ test('it can upgrade to another cycle with date string', function () {
 
 test('it cant extend with wrong duration', function () {
     $subscription = $this->user->subscribeTo($this->plan, 15);
-    sleep(1);
-
     $this->assertFalse($this->user->extendCurrentSubscriptionWith(-1));
     $this->assertEquals($subscription->plan_id, $this->plan->id);
     $this->assertEquals($subscription->remainingDays(), 14);
 });
 
 test('it can extent now', function () {
-    $subscription = $this->user->subscribeTo($this->plan, 15);
-    sleep(1);
-
+    $this->user->subscribeTo($this->plan, 15);
     $subscription = $this->user->extendCurrentSubscriptionWith(30, true);
-    sleep(1);
-
     $this->assertEquals($subscription->plan_id, $this->plan->id);
     $this->assertEquals($subscription->remainingDays(), 44);
 });
 
 test('it can extend to another cycle', function () {
     $subscription = $this->user->subscribeTo($this->plan, 15);
-    sleep(1);
-
     $this->user->extendCurrentSubscriptionWith(30, false);
-    sleep(1);
-
     $this->assertEquals($subscription->plan_id, $this->plan->id);
     $this->assertEquals($subscription->remainingDays(), 14);
     $this->assertEquals($this->user->subscriptions->count(), 2);
 });
 
 test('it can extend now with carbon instance', function () {
-    $subscription = $this->user->subscribeTo($this->plan, 15);
-    sleep(1);
-
+    $this->user->subscribeTo($this->plan, 15);
     $subscription = $this->user->extendCurrentSubscriptionUntil(Carbon::now()->addDays(30), true);
-    sleep(1);
-
     $this->assertEquals($subscription->plan_id, $this->plan->id);
     $this->assertEquals($subscription->remainingDays(), 29);
 });
 
 test('it can extend to another cycle with carbon instance', function () {
     $subscription = $this->user->subscribeTo($this->plan, 15);
-    sleep(1);
-
     $this->user->extendCurrentSubscriptionUntil(Carbon::now()->addDays(30), false);
-    sleep(1);
-
     $this->assertEquals($subscription->plan_id, $this->plan->id);
     $this->assertEquals($subscription->remainingDays(), 14);
     $this->assertEquals($this->user->subscriptions->count(), 2);
 });
 
 test('it can extend now with date time string', function () {
-    $subscription = $this->user->subscribeTo($this->plan, 15);
-    sleep(1);
-
+    $this->user->subscribeTo($this->plan, 15);
     $subscription = $this->user->extendCurrentSubscriptionUntil(Carbon::now()->addDays(30)->toDateTimeString(), true);
-    sleep(1);
-
     $this->assertEquals($subscription->plan_id, $this->plan->id);
     $this->assertEquals($subscription->remainingDays(), 29);
 });
 
 test('it can extend to another cycle with date time string', function () {
     $subscription = $this->user->subscribeTo($this->plan, 15);
-    sleep(1);
-
     $this->user->extendCurrentSubscriptionUntil(Carbon::now()->addDays(30)->toDateTimeString(), false);
-    sleep(1);
-
     $this->assertEquals($subscription->plan_id, $this->plan->id);
     $this->assertEquals($subscription->remainingDays(), 14);
     $this->assertEquals($this->user->subscriptions->count(), 2);
 });
 
 test('it can extend now with date string', function () {
-    $subscription = $this->user->subscribeTo($this->plan, 15);
-    sleep(1);
-
+    $this->user->subscribeTo($this->plan, 15);
     $subscription = $this->user->extendCurrentSubscriptionUntil(Carbon::now()->addDays(30)->toDateString(), true);
-    sleep(1);
-
     $this->assertEquals($subscription->plan_id, $this->plan->id);
     $this->assertEquals($subscription->remainingDays(), 29);
 });
 
 test('it can extend to another cycle with date string', function () {
     $subscription = $this->user->subscribeTo($this->plan, 15);
-    sleep(1);
-
     $this->user->extendCurrentSubscriptionUntil(Carbon::now()->addDays(30)->toDateString(), false);
-    sleep(1);
-
     $this->assertEquals($subscription->plan_id, $this->plan->id);
     $this->assertEquals($subscription->remainingDays(), 14);
     $this->assertEquals($this->user->subscriptions->count(), 2);
@@ -292,30 +216,20 @@ test('it can extend to another cycle with date string', function () {
 
 test('it can upgrade from user without active subscription', function () {
     $subscription = $this->user->upgradeCurrentPlanTo($this->newPlan, 15, true);
-    sleep(1);
-
     $this->assertEquals($subscription->plan_id, $this->newPlan->id);
     $this->assertEquals($subscription->remainingDays(), 14);
 });
 
 test('it can upgrade to from user now', function () {
     $subscription = $this->user->subscribeTo($this->plan, 15);
-    sleep(1);
-
     $subscription = $this->user->upgradeCurrentPlanTo($this->newPlan, 15, true);
-    sleep(1);
-
     $this->assertEquals($subscription->plan_id, $this->newPlan->id);
     $this->assertEquals($subscription->remainingDays(), 29);
 });
 
 test('it can upgrade to from user to another cycle', function () {
     $subscription = $this->user->subscribeTo($this->plan, 15);
-    sleep(1);
-
     $this->user->upgradeCurrentPlanTo($this->newPlan, 30, false);
-    sleep(1);
-
     $this->assertEquals($subscription->plan_id, $this->plan->id);
     $this->assertEquals($subscription->remainingDays(), 14);
     $this->assertEquals($this->user->subscriptions->count(), 2);
@@ -323,30 +237,20 @@ test('it can upgrade to from user to another cycle', function () {
 
 test('it can extend from user without active subscription', function () {
     $subscription = $this->user->extendCurrentSubscriptionWith(15, true);
-    sleep(1);
-
     $this->assertEquals($subscription->plan_id, $this->plan->id);
     $this->assertEquals($subscription->remainingDays(), 14);
 });
 
 test('it can extend from user now', function () {
-    $subscription = $this->user->subscribeTo($this->plan, 15);
-    sleep(1);
-
+    $this->user->subscribeTo($this->plan, 15);
     $subscription = $this->user->extendCurrentSubscriptionWith(15, true);
-    sleep(1);
-
     $this->assertEquals($subscription->plan_id, $this->plan->id);
     $this->assertEquals($subscription->remainingDays(), 29);
 });
 
 test('it can extend from user to another cycle', function () {
     $subscription = $this->user->subscribeTo($this->plan, 15);
-    sleep(1);
-
     $this->user->extendCurrentSubscriptionWith(15, false);
-    sleep(1);
-
     $this->assertEquals($subscription->plan_id, $this->plan->id);
     $this->assertEquals($subscription->remainingDays(), 14);
     $this->assertEquals($this->user->subscriptions->count(), 2);
@@ -354,14 +258,9 @@ test('it can extend from user to another cycle', function () {
 
 test('it can cancel subscription', function () {
     $subscription = $this->user->subscribeTo($this->plan, 15);
-    sleep(1);
-
     $this->assertEquals($subscription->plan_id, $this->plan->id);
     $this->assertEquals($subscription->remainingDays(), 14);
-
     $subscription = $this->user->cancelCurrentSubscription();
-    sleep(1);
-
     $this->assertNotNull($subscription);
     $this->assertTrue($subscription->isCancelled());
     $this->assertTrue($subscription->isPendingCancellation());
@@ -371,14 +270,9 @@ test('it can cancel subscription', function () {
 
 test('it can cancel subscription from user', function () {
     $subscription = $this->user->subscribeTo($this->plan, 15);
-    sleep(1);
-
     $this->assertEquals($subscription->plan_id, $this->plan->id);
     $this->assertEquals($subscription->remainingDays(), 14);
-
     $subscription = $this->user->cancelCurrentSubscription();
-    sleep(1);
-
     $this->assertNotNull($subscription);
     $this->assertTrue($subscription->isCancelled());
     $this->assertTrue($subscription->isPendingCancellation());

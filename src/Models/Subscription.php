@@ -20,7 +20,7 @@ class Subscription extends Model
         'model_id',
         'model_type',
         'payment_method',
-        'is_paid',
+        'active',
         'charging_price',
         'charging_currency',
         'is_recurring',
@@ -37,7 +37,7 @@ class Subscription extends Model
     ];
 
     protected $casts = [
-        'is_paid' => 'boolean',
+        'active' => 'boolean',
         'is_recurring' => 'boolean',
     ];
 
@@ -63,12 +63,12 @@ class Subscription extends Model
 
     public function scopePaid($query)
     {
-        return $query->where('is_paid', true);
+        return $query->where('active', true);
     }
 
     public function scopeUnpaid($query)
     {
-        return $query->where('is_paid', false);
+        return $query->where('active', false);
     }
 
     public function scopeExpired($query)

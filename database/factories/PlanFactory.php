@@ -17,13 +17,11 @@ class PlanFactory extends Factory
      *
      * @return array<string, mixed>
      */
-    public function definition()
+    public function definition(): array
     {
         return [
             'name' => 'Testing Plan '.$this->faker->randomDigit(),
             'description' => 'This is a testing plan.',
-            //            'price' => (float) mt_rand(10, 200),
-            //            'currency' => 'EUR',
             'duration' => 30,
         ];
     }

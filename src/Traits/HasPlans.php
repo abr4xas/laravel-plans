@@ -19,9 +19,9 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 trait HasPlans
 {
     /**
-     * Get Subscriptions relatinship.
+     * Get Subscriptions relationship.
      *
-     * @return morphMany Relatinship.
+     * @return morphMany Relationship.
      */
     public function subscriptions(): MorphMany
     {
@@ -29,7 +29,7 @@ trait HasPlans
     }
 
     /**
-     * Return the current subscription relatinship.
+     * Return the current subscription relationship.
      *
      * @return morphMany Relationship.
      */
@@ -130,7 +130,7 @@ trait HasPlans
     /**
      * Check if the model has subscriptions.
      *
-     * @return bool Wether the binded model has subscriptions or not.
+     * @return bool whether the binded model has subscriptions or not.
      */
     public function hasSubscriptions(): bool
     {
@@ -140,7 +140,7 @@ trait HasPlans
     /**
      * Check if the model has an active subscription right now.
      *
-     * @return bool Wether the binded model has an active subscription or not.
+     * @return bool whether the binded model has an active subscription or not.
      */
     public function hasActiveSubscription(): bool
     {
@@ -162,7 +162,7 @@ trait HasPlans
      *
      * @param  Plan  $plan The Plan model instance.
      * @param  int  $duration The duration, in days, for the subscription.
-     * @param  bool  $isRecurring Wether the subscription should auto renew every $duration days.
+     * @param  bool  $isRecurring whether the subscription should auto-renew every $duration days.
      * @return false|Model The PlanSubscription model instance.
      */
     public function subscribeTo(Plan $plan, int $duration = 30, bool $isRecurring = true): Model|bool
@@ -183,7 +183,7 @@ trait HasPlans
             'expires_on' => Carbon::now()->addDays($duration),
             'cancelled_on' => null,
             'payment_method' => null,
-            'is_paid' => true,
+            'active' => true,
             'charging_price' => $plan->price,
             'charging_currency' => $plan->currency,
             'is_recurring' => $isRecurring,
@@ -200,7 +200,7 @@ trait HasPlans
      *
      * @param  Plan  $plan The Plan model instance.
      * @param  DateTime|string  $date The date (either DateTime, date or Carbon instance) until the subscription will be extended until.
-     * @param  bool  $isRecurring Wether the subscription should auto renew. The renewal period (in days) is the difference between now and the set date.
+     * @param  bool  $isRecurring whether the subscription should auto-renew. The renewal period (in days) is the difference between now and the set date.
      * @return false|Model The PlanSubscription model instance.
      */
     public function subscribeToUntil(Plan $plan, DateTime|string $date, bool $isRecurring = true): Model|bool
@@ -221,7 +221,7 @@ trait HasPlans
             'expires_on' => $date,
             'cancelled_on' => null,
             'payment_method' => null,
-            'is_paid' => true,
+            'active' => true,
             'charging_price' => $plan->price,
             'charging_currency' => $plan->currency,
             'is_recurring' => $isRecurring,
@@ -238,8 +238,8 @@ trait HasPlans
      *
      * @param  Plan  $newPlan The new Plan model instance.
      * @param  int  $duration The duration, in days, for the new subscription.
-     * @param  bool  $startFromNow Wether the subscription will start from now, extending the current plan, or a new subscription will be created to extend the current one.
-     * @param  bool  $isRecurring Wether the subscription should auto renew. The renewal period (in days) is the difference between now and the set date.
+     * @param  bool  $startFromNow whether the subscription will start from now, extending the current plan, or a new subscription will be created to extend the current one.
+     * @param  bool  $isRecurring whether the subscription should auto-renew. The renewal period (in days) is the difference between now and the set date.
      * @return bool|Model The PlanSubscription model instance with the new plan or the current one, extended.
      */
     public function upgradeCurrentPlanTo(Plan $newPlan, int $duration = 30, bool $startFromNow = true, bool $isRecurring = true): Model|bool
@@ -272,13 +272,13 @@ trait HasPlans
     /**
      * Upgrade the binded model's plan. If it is the same plan, it just extends it.
      *
-     * @param  Plan  $newPlan The new Plan model instance.
-     * @param  DateTime|string  $date The date (either DateTime, date or Carbon instance) until the subscription will be extended until.
-     * @param  bool  $startFromNow Wether the subscription will start from now, extending the current plan, or a new subscription will be created to extend the current one.
-     * @param  bool  $isRecurring Wether the subscription should auto renew. The renewal period (in days) is the difference between now and the set date.
+     * @param Plan $newPlan The new Plan model instance.
+     * @param DateTime|string $date The date (either DateTime, date or Carbon instance) until the subscription will be extended until.
+     * @param  bool  $startFromNow whether the subscription will start from now, extending the current plan, or a new subscription will be created to extend the current one.
+     * @param  bool  $isRecurring whether the subscription should auto-renew. The renewal period (in days) is the difference between now and the set date.
      * @return false|Model|Subscription The PlanSubscription model instance with the new plan or the current one, extended.
      */
-    public function upgradeCurrentPlanToUntil($newPlan, $date, bool $startFromNow = true, bool $isRecurring = true): Model|bool|Subscription
+    public function upgradeCurrentPlanToUntil(Plan $newPlan, DateTime|string $date, bool $startFromNow = true, bool $isRecurring = true): Model|bool|Subscription
     {
         if (! $this->hasActiveSubscription()) {
             return $this->subscribeToUntil($newPlan, $date, $isRecurring);
@@ -317,8 +317,8 @@ trait HasPlans
      * Extend the current subscription with an amount of days.
      *
      * @param  int  $duration The duration, in days, for the extension.
-     * @param  bool  $startFromNow Wether the subscription will be extended from now, extending to the current plan, or a new subscription will be created to extend the current one.
-     * @param  bool  $isRecurring Wether the subscription should auto renew. The renewal period (in days) equivalent with $duration.
+     * @param  bool  $startFromNow whether the subscription will be extended from now, extending to the current plan, or a new subscription will be created to extend the current one.
+     * @param  bool  $isRecurring whether the subscription should auto-renew. The renewal period (in days) equivalent with $duration.
      * @return bool|Subscription The PlanSubscription model instance of the extended subscription.
      */
     public function extendCurrentSubscriptionWith(int $duration = 30, bool $startFromNow = true, bool $isRecurring = true): bool|Subscription
@@ -369,11 +369,11 @@ trait HasPlans
      * Extend the subscription until a certain date.
      *
      * @param  DateTime|string  $date The date (either DateTime, date or Carbon instance) until the subscription will be extended until.
-     * @param  bool  $startFromNow Wether the subscription will be extended from now, extending to the current plan, or a new subscription will be created to extend the current one.
-     * @param  bool  $isRecurring Wether the subscription should auto renew. The renewal period (in days) is the difference between now and the set date.
-     * @return false|Model The PlanSubscription model instance of the extended subscription.
+     * @param  bool  $startFromNow whether the subscription will be extended from now, extending to the current plan, or a new subscription will be created to extend the current one.
+     * @param  bool  $isRecurring whether the subscription should auto-renew. The renewal period (in days) is the difference between now and the set date.
+     * @return false|Subscription The Subscription model instance of the extended subscription.
      */
-    public function extendCurrentSubscriptionUntil(DateTime|string $date, bool $startFromNow = true, bool $isRecurring = true)
+    public function extendCurrentSubscriptionUntil(DateTime|string $date, bool $startFromNow = true, bool $isRecurring = true): bool|Subscription
     {
         if (! $this->hasActiveSubscription()) {
             if ($this->hasSubscriptions()) {
@@ -425,7 +425,7 @@ trait HasPlans
     /**
      * Cancel the current subscription.
      *
-     * @return Subscription|false Wether the subscription was cancelled or not.
+     * @return Subscription|false whether the subscription was cancelled or not.
      */
     public function cancelCurrentSubscription(): bool|Subscription
     {
@@ -480,7 +480,7 @@ trait HasPlans
         $recurringEachDays = $lastActiveSubscription->recurring_each_days;
 
         if ($lastActiveSubscription->payment_method) {
-            if (! $lastActiveSubscription->is_paid) {
+            if (! $lastActiveSubscription->active) {
                 return false;
             }
         }
